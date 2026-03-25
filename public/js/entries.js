@@ -35,6 +35,14 @@ function fmtDate(dateStr) {
   return new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
+function escHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
 function renderEntries() {
   const list = document.getElementById('entries-list')
   const filtered = activeFilter === 'all'
@@ -52,20 +60,20 @@ function renderEntries() {
       fmtDate(e.date),
       label,
       e.recurring ? 'Recurring' : null,
-      e.payment_method || null
+      e.payment_method ? escHtml(e.payment_method) : null
     ].filter(Boolean).join(' · ')
 
     return `
       <div class="entry-row entry-row--${e.category}">
         <div class="entry-info">
-          <div class="entry-name">${e.name}</div>
+          <div class="entry-name">${escHtml(e.name)}</div>
           <div class="entry-meta">${meta}</div>
         </div>
         <div class="entry-right">
           <div class="entry-amount entry-amount--${e.category}">${fmt(e.amount)}</div>
           <div class="entry-actions">
-            <button class="btn-icon edit-btn" data-id="${e.id}" aria-label="Edit ${e.name}">✏</button>
-            <button class="btn-icon delete-btn" data-id="${e.id}" aria-label="Delete ${e.name}">✕</button>
+            <button class="btn-icon edit-btn" data-id="${e.id}" aria-label="Edit ${escHtml(e.name)}">✏</button>
+            <button class="btn-icon delete-btn" data-id="${e.id}" aria-label="Delete ${escHtml(e.name)}">✕</button>
           </div>
         </div>
       </div>
@@ -74,7 +82,7 @@ function renderEntries() {
 
   list.querySelectorAll('.edit-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const entry = currentEntries.find(e => e.id === parseInt(btn.dataset.id))
+      const entry = currentEntries.find(e => e.id === parseInt(btn.dataset.id, 10))
       openModal(entry)
     })
   })
@@ -83,7 +91,7 @@ function renderEntries() {
     btn.addEventListener('click', async () => {
       if (!confirm('Delete this entry?')) return
       try {
-        await deleteEntry(parseInt(btn.dataset.id))
+        await deleteEntry(parseInt(btn.dataset.id, 10))
         await load()
       } catch {
         alert('Failed to delete. Please try again.')
@@ -95,8 +103,12 @@ function renderEntries() {
 async function load() {
   const month = getMonth()
   document.getElementById('month-label').textContent = fmtMonthLabel(month)
-  currentEntries = await getEntries(month)
-  renderEntries()
+  try {
+    currentEntries = await getEntries(month)
+    renderEntries()
+  } catch {
+    document.getElementById('entries-list').innerHTML = '<p class="empty-state">Failed to load entries.</p>'
+  }
 }
 
 async function init() {

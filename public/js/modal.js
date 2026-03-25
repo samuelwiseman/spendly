@@ -110,9 +110,10 @@ async function handleSubmit(e) {
   const form = e.target
   const errorEl = $('form-error')
   const submitBtn = $('submit-btn')
+  const isEdit = editId !== null
 
   const data = {
-    name: form.name.value.trim(),
+    name: form.elements['name'].value.trim(),
     amount: parseFloat(form.amount.value),
     category: form.category.value,
     date: form.date.value,
@@ -132,7 +133,7 @@ async function handleSubmit(e) {
   errorEl.hidden = true
 
   try {
-    if (editId) {
+    if (isEdit) {
       await updateEntry(editId, data)
     } else {
       await createEntry(data)
@@ -144,6 +145,6 @@ async function handleSubmit(e) {
     errorEl.hidden = false
   } finally {
     submitBtn.disabled = false
-    submitBtn.textContent = editId ? 'Save Changes' : 'Save Entry'
+    submitBtn.textContent = isEdit ? 'Save Changes' : 'Save Entry'
   }
 }

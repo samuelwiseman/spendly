@@ -34,56 +34,60 @@ async function load() {
   const month = getMonth()
   document.getElementById('month-label').textContent = fmtMonthLabel(month)
 
-  const entries = await getEntries(month)
-  const totals = { need: 0, want: 0, luxury: 0 }
-  const counts = { need: 0, want: 0, luxury: 0 }
+  try {
+    const entries = await getEntries(month)
+    const totals = { need: 0, want: 0, luxury: 0 }
+    const counts = { need: 0, want: 0, luxury: 0 }
 
-  for (const e of entries) {
-    totals[e.category] += e.amount
-    counts[e.category]++
-  }
+    for (const e of entries) {
+      totals[e.category] += e.amount
+      counts[e.category]++
+    }
 
-  const total = totals.need + totals.want + totals.luxury
-  const donut = document.getElementById('donut')
+    const total = totals.need + totals.want + totals.luxury
+    const donut = document.getElementById('donut')
 
-  if (total === 0) {
-    donut.style.background = '#e5e5e5'
-  } else {
-    const n = (totals.need / total) * 100
-    const w = (totals.want / total) * 100
-    donut.style.background = `conic-gradient(
-      ${COLORS.need} 0% ${n}%,
-      ${COLORS.want} ${n}% ${n + w}%,
-      ${COLORS.luxury} ${n + w}% 100%
-    )`
-  }
+    if (total === 0) {
+      donut.style.background = '#e5e5e5'
+    } else {
+      const n = (totals.need / total) * 100
+      const w = (totals.want / total) * 100
+      donut.style.background = `conic-gradient(
+        ${COLORS.need} 0% ${n}%,
+        ${COLORS.want} ${n}% ${n + w}%,
+        ${COLORS.luxury} ${n + w}% 100%
+      )`
+    }
 
-  document.getElementById('total-amount').textContent = fmt(total)
-  document.getElementById('legend-need').textContent = `Need ${fmt(totals.need)}`
-  document.getElementById('legend-want').textContent = `Want ${fmt(totals.want)}`
-  document.getElementById('legend-luxury').textContent = `Luxury ${fmt(totals.luxury)}`
+    document.getElementById('total-amount').textContent = fmt(total)
+    document.getElementById('legend-need').textContent = `Need ${fmt(totals.need)}`
+    document.getElementById('legend-want').textContent = `Want ${fmt(totals.want)}`
+    document.getElementById('legend-luxury').textContent = `Luxury ${fmt(totals.luxury)}`
 
-  const breakdown = document.getElementById('category-breakdown')
-  breakdown.innerHTML = ['need', 'want', 'luxury'].map(cat => {
-    const pct = total ? Math.round((totals[cat] / total) * 100) : 0
-    const label = cat.charAt(0).toUpperCase() + cat.slice(1)
-    const n = counts[cat]
-    return `
-      <div class="breakdown-row breakdown-row--${cat}">
-        <div class="breakdown-left">
-          <span class="breakdown-dot breakdown-dot--${cat}"></span>
-          <div>
-            <div class="breakdown-name">${label}</div>
-            <div class="breakdown-count">${n} entr${n === 1 ? 'y' : 'ies'}</div>
+    const breakdown = document.getElementById('category-breakdown')
+    breakdown.innerHTML = ['need', 'want', 'luxury'].map(cat => {
+      const pct = total ? Math.round((totals[cat] / total) * 100) : 0
+      const label = cat.charAt(0).toUpperCase() + cat.slice(1)
+      const n = counts[cat]
+      return `
+        <div class="breakdown-row breakdown-row--${cat}">
+          <div class="breakdown-left">
+            <span class="breakdown-dot breakdown-dot--${cat}"></span>
+            <div>
+              <div class="breakdown-name">${label}</div>
+              <div class="breakdown-count">${n} entr${n === 1 ? 'y' : 'ies'}</div>
+            </div>
+          </div>
+          <div class="breakdown-right">
+            <div class="breakdown-amount breakdown-amount--${cat}">${fmt(totals[cat])}</div>
+            <div class="breakdown-pct">${pct}%</div>
           </div>
         </div>
-        <div class="breakdown-right">
-          <div class="breakdown-amount breakdown-amount--${cat}">${fmt(totals[cat])}</div>
-          <div class="breakdown-pct">${pct}%</div>
-        </div>
-      </div>
-    `
-  }).join('')
+      `
+    }).join('')
+  } catch {
+    document.getElementById('category-breakdown').innerHTML = '<p class="empty-state">Failed to load entries.</p>'
+  }
 }
 
 async function init() {
