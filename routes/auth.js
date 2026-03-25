@@ -17,22 +17,28 @@ export default async function authRoutes(app) {
   })
 
   app.get('/auth/google/callback', async (request, reply) => {
-    const { token } = await app.googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(request)
-    const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: { Authorization: `Bearer ${token.access_token}` }
-    })
-    const profile = await res.json()
-    const user = app.db.upsertUser({
-      provider: 'google',
-      providerId: String(profile.id),
-      name: profile.name,
-      email: profile.email,
-      avatarUrl: profile.picture
-    })
-    request.session.userId = user.id
-    request.session.name = user.name
-    request.session.avatarUrl = user.avatar_url
-    reply.redirect('/')
+    try {
+      const { token } = await app.googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(request)
+      const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${token.access_token}` }
+      })
+      if (!res.ok) throw new Error(`Google userinfo failed: ${res.status}`)
+      const profile = await res.json()
+      const user = app.db.upsertUser({
+        provider: 'google',
+        providerId: String(profile.id),
+        name: profile.name,
+        email: profile.email,
+        avatarUrl: profile.picture
+      })
+      request.session.userId = user.id
+      request.session.name = user.name
+      request.session.avatarUrl = user.avatar_url
+      reply.redirect('/')
+    } catch (err) {
+      app.log.error(err, 'Google OAuth callback failed')
+      reply.redirect('/login.html?error=auth_failed')
+    }
   })
 
   // ── GitHub OAuth ────────────────────────────────────────────────────────────
@@ -51,33 +57,41 @@ export default async function authRoutes(app) {
   })
 
   app.get('/auth/github/callback', async (request, reply) => {
-    const { token } = await app.githubOAuth2.getAccessTokenFromAuthorizationCodeFlow(request)
-    const profileRes = await fetch('https://api.github.com/user', {
-      headers: { Authorization: `Bearer ${token.access_token}`, 'User-Agent': 'SpendTracker' }
-    })
-    const profile = await profileRes.json()
-
-    // GitHub may not expose email in /user — fetch from /user/emails
-    let email = profile.email
-    if (!email) {
-      const emailRes = await fetch('https://api.github.com/user/emails', {
+    try {
+      const { token } = await app.githubOAuth2.getAccessTokenFromAuthorizationCodeFlow(request)
+      const profileRes = await fetch('https://api.github.com/user', {
         headers: { Authorization: `Bearer ${token.access_token}`, 'User-Agent': 'SpendTracker' }
       })
-      const emails = await emailRes.json()
-      email = Array.isArray(emails) ? (emails.find(e => e.primary)?.email ?? null) : null
-    }
+      if (!profileRes.ok) throw new Error(`GitHub user fetch failed: ${profileRes.status}`)
+      const profile = await profileRes.json()
 
-    const user = app.db.upsertUser({
-      provider: 'github',
-      providerId: String(profile.id),
-      name: profile.name || profile.login,
-      email,
-      avatarUrl: profile.avatar_url
-    })
-    request.session.userId = user.id
-    request.session.name = user.name
-    request.session.avatarUrl = user.avatar_url
-    reply.redirect('/')
+      // GitHub may not expose email in /user — fetch from /user/emails
+      let email = profile.email
+      if (!email) {
+        const emailRes = await fetch('https://api.github.com/user/emails', {
+          headers: { Authorization: `Bearer ${token.access_token}`, 'User-Agent': 'SpendTracker' }
+        })
+        if (emailRes.ok) {
+          const emails = await emailRes.json()
+          email = Array.isArray(emails) ? (emails.find(e => e.primary)?.email ?? null) : null
+        }
+      }
+
+      const user = app.db.upsertUser({
+        provider: 'github',
+        providerId: String(profile.id),
+        name: profile.name || profile.login,
+        email,
+        avatarUrl: profile.avatar_url
+      })
+      request.session.userId = user.id
+      request.session.name = user.name
+      request.session.avatarUrl = user.avatar_url
+      reply.redirect('/')
+    } catch (err) {
+      app.log.error(err, 'GitHub OAuth callback failed')
+      reply.redirect('/login.html?error=auth_failed')
+    }
   })
 
   // ── Session routes ───────────────────────────────────────────────────────────
