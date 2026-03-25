@@ -41,59 +41,6 @@ export default async function authRoutes(app) {
     }
   })
 
-  // ── GitHub OAuth ────────────────────────────────────────────────────────────
-  app.register(oauth2Plugin, {
-    name: 'githubOAuth2',
-    scope: ['user:email'],
-    credentials: {
-      client: {
-        id: process.env.GITHUB_CLIENT_ID || 'placeholder',
-        secret: process.env.GITHUB_CLIENT_SECRET || 'placeholder'
-      },
-      auth: oauth2Plugin.GITHUB_CONFIGURATION
-    },
-    startRedirectPath: '/auth/github',
-    callbackUri: process.env.GITHUB_CALLBACK_URL || 'http://localhost:3000/auth/github/callback'
-  })
-
-  app.get('/auth/github/callback', async (request, reply) => {
-    try {
-      const { token } = await app.githubOAuth2.getAccessTokenFromAuthorizationCodeFlow(request)
-      const profileRes = await fetch('https://api.github.com/user', {
-        headers: { Authorization: `Bearer ${token.access_token}`, 'User-Agent': 'SpendTracker' }
-      })
-      if (!profileRes.ok) throw new Error(`GitHub user fetch failed: ${profileRes.status}`)
-      const profile = await profileRes.json()
-
-      // GitHub may not expose email in /user — fetch from /user/emails
-      let email = profile.email
-      if (!email) {
-        const emailRes = await fetch('https://api.github.com/user/emails', {
-          headers: { Authorization: `Bearer ${token.access_token}`, 'User-Agent': 'SpendTracker' }
-        })
-        if (emailRes.ok) {
-          const emails = await emailRes.json()
-          email = Array.isArray(emails) ? (emails.find(e => e.primary)?.email ?? null) : null
-        }
-      }
-
-      const user = app.db.upsertUser({
-        provider: 'github',
-        providerId: String(profile.id),
-        name: profile.name || profile.login,
-        email,
-        avatarUrl: profile.avatar_url
-      })
-      request.session.userId = user.id
-      request.session.name = user.name
-      request.session.avatarUrl = user.avatar_url
-      reply.redirect('/')
-    } catch (err) {
-      app.log.error(err, 'GitHub OAuth callback failed')
-      reply.redirect('/login.html?error=auth_failed')
-    }
-  })
-
   // ── Session routes ───────────────────────────────────────────────────────────
   app.get('/auth/me', async (request, reply) => {
     if (!request.session.userId) return reply.status(401).send({ error: 'Unauthorized' })
