@@ -80,6 +80,17 @@ test('PUT /api/entries/:id updates an existing entry', async () => {
   await app.close()
 })
 
+test('PUT /api/entries/:id returns 400 when required fields are missing', async () => {
+  const { app, user, cookie } = await buildAuthedApp()
+  const entry = app.db.createEntry(user.id, { name: 'Rent', amount: 900, category: 'need', date: '2026-03-01' })
+  const res = await app.inject({
+    method: 'PUT', url: `/api/entries/${entry.id}`, headers: { cookie },
+    payload: { name: 'Rent' } // missing amount, category, date
+  })
+  assert.equal(res.statusCode, 400)
+  await app.close()
+})
+
 test('PUT /api/entries/:id returns 404 for another user\'s entry', async () => {
   const app = await buildApp({ db: ':memory:', enableTestRoutes: true })
   const u1 = app.db.upsertUser({ provider: 'google', providerId: '1', name: 'A', email: '', avatarUrl: '' })

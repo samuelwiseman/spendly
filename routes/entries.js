@@ -26,10 +26,14 @@ export default async function entriesRoutes(app) {
   })
 
   app.put('/entries/:id', async (request, reply) => {
+    const { name, amount, category, date, notes, recurring, payment_method } = request.body ?? {}
+    if (!name || amount == null || !category || !date) {
+      return reply.status(400).send({ error: 'name, amount, category and date are required' })
+    }
     const entry = app.db.updateEntry(
       request.session.userId,
       parseInt(request.params.id),
-      request.body
+      { name, amount, category, date, notes, recurring, payment_method }
     )
     if (!entry) return reply.status(404).send({ error: 'Entry not found' })
     return entry
