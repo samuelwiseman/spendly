@@ -1,5 +1,7 @@
 # Spendly
 
+**Live:** https://web-production-5ac5e.up.railway.app
+
 A hosted, multi-user monthly spend tracker. Log and categorise your outgoings as **Need**, **Want**, or **Luxury** — with a donut chart overview and a filterable entries list.
 
 ## Features
