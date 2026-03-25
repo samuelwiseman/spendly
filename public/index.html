@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spendly — Overview</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="nav">
+    <span class="nav-logo">Spendly</span>
+    <div class="nav-links">
+      <a href="/" class="nav-link nav-link--active">Overview</a>
+      <a href="/entries.html" class="nav-link">Entries</a>
+    </div>
+    <div class="nav-user">
+      <img id="user-avatar" class="avatar" src="" alt="Your avatar">
+      <button id="logout-btn" class="btn-ghost">Sign out</button>
+    </div>
+  </nav>
+  <main class="container">
+    <div class="month-nav">
+      <button id="prev-month" class="btn-ghost" aria-label="Previous month">&#8249;</button>
+      <span id="month-label" class="month-label"></span>
+      <button id="next-month" class="btn-ghost" aria-label="Next month">&#8250;</button>
+    </div>
+    <div class="summary-card">
+      <div class="donut-wrapper">
+        <div id="donut" class="donut" role="img" aria-label="Spend breakdown chart"></div>
+      </div>
+      <div class="summary-detail">
+        <div class="summary-total-label">Total this month</div>
+        <div id="total-amount" class="summary-total">£0</div>
+        <div class="summary-legend">
+          <span class="legend-item legend-need" id="legend-need">Need £0</span>
+          <span class="legend-item legend-want" id="legend-want">Want £0</span>
+          <span class="legend-item legend-luxury" id="legend-luxury">Luxury £0</span>
+        </div>
+      </div>
+    </div>
+    <div id="category-breakdown" class="category-breakdown"></div>
+    <button id="add-entry-btn" class="btn btn-primary btn-full">+ Add Entry</button>
+  </main>
+  <script type="module" src="/js/overview.js"></script>
+</body>
+</html>
