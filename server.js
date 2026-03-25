@@ -25,7 +25,7 @@ export async function buildApp(opts = {}) {
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     },
-    saveUninitialized: false
+    saveUninitialized: true
   })
 
   // Test-only route: GET /test/set-session?userId=N sets session without OAuth
