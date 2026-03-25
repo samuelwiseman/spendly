@@ -1,6 +1,7 @@
 {
   "name": "spend-tracker",
   "version": "1.0.0",
+  "engines": { "node": ">=18.13.0" },
   "type": "module",
   "scripts": {
     "start": "node server.js",
