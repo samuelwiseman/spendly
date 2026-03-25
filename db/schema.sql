@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS entries (
   name           TEXT    NOT NULL,
   amount         REAL    NOT NULL,
   category       TEXT    NOT NULL CHECK(category IN ('need', 'want', 'luxury')),
-  date           TEXT    NOT NULL,
+  date           TEXT    NOT NULL CHECK(date GLOB '????-??-??'),
   notes          TEXT,
   recurring      INTEGER NOT NULL DEFAULT 0,
   payment_method TEXT,

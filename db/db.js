@@ -60,6 +60,10 @@ export function createDb(file = process.env.DB_PATH || 'data.db') {
         'DELETE FROM entries WHERE id = ? AND user_id = ?'
       ).run(id, userId)
       return result.changes > 0
+    },
+
+    close() {
+      db.close()
     }
   }
 }
