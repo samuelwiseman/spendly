@@ -8,3 +8,5 @@ npm-debug.log*
 *.log
 .env.local
 .env.*.local
+
+.superpowers/
