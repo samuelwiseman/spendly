@@ -16,6 +16,8 @@
 
 Every task's requirements implicitly include this section.
 
+**Ports:** Spendly's dev and `next start` servers bind **3001**, not Next's default 3000 — `samuelwiseman.com` owns 3000 on this machine. Playwright uses **3101** (the site uses 3100). The container listens on 3000 internally and is published on host port **13001** (the site holds 13000). Container-internal 3000 is correct and must not change.
+
 **Versions — pin exactly, no carets on the two risky ones:**
 - `next@16.2.10`, `react@19`, `react-dom@19`, `motion@^12.42.2`
 - `next-auth@5.0.0-beta.31` — **beta. Pin exactly.** The v5 API is not stable; a floating range will break the build without warning.
@@ -120,9 +122,9 @@ Replaces the Fastify app. `db/`, `test/` and `public/js/` are kept for reference
   "version": "2.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3001",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3001",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test"
@@ -374,7 +376,8 @@ export function GET() {
 ```
 # Auth.js — generate with: npx auth secret
 AUTH_SECRET=
-AUTH_URL=http://localhost:3000
+# Port 3001, not 3000: samuelwiseman.com's dev server owns 3000 on this machine.
+AUTH_URL=http://localhost:3001
 
 # Google OAuth — https://console.cloud.google.com/apis/credentials
 # Callback: {AUTH_URL}/api/auth/callback/google
@@ -388,11 +391,14 @@ DB_PATH=data.db
 # TEST_AUTH_BYPASS=1
 ```
 
-- [ ] **Step 10: Delete the Fastify application**
+- [ ] **Step 10: Delete the Fastify application and ignore Next's build output**
 
 ```bash
 git rm -r server.js routes Procfile public
+printf '\n.next/\n' >> .gitignore
 ```
+
+`next-env.d.ts` **is** committed (Next regenerates it, but tooling expects it present). `.next/` is not.
 
 `db/` and `test/` stay for now — Task 3 ports their contents, then removes them.
 
@@ -401,7 +407,7 @@ git rm -r server.js routes Procfile public
 Run: `npm run build`
 Expected: build succeeds, and the output lists `/health` as a route.
 
-Run: `npm run dev` in one shell, then `curl -s localhost:3000/health`
+Run: `npm run dev` in one shell, then `curl -s localhost:3001/health`
 Expected: `ok`
 
 - [ ] **Step 12: Commit**
@@ -1010,7 +1016,7 @@ git rm -r db test
 
 - [ ] **Step 9: Verify the health route still answers**
 
-Run: `npm run dev`, then `curl -s -o /dev/null -w "%{http_code}" localhost:3000/health`
+Run: `npm run dev`, then `curl -s -o /dev/null -w "%{http_code}" localhost:3001/health`
 Expected: `200`
 
 - [ ] **Step 10: Commit**
@@ -1152,9 +1158,9 @@ export default async function LoginPage() {
 
 - [ ] **Step 6: Verify the OAuth flow by hand**
 
-Create a Google OAuth client (Web application) with authorised redirect URI `http://localhost:3000/api/auth/callback/google`. Populate `.env` from `.env.example`; generate `AUTH_SECRET` with `npx auth secret`.
+Create a Google OAuth client (Web application) with authorised redirect URI `http://localhost:3001/api/auth/callback/google`. Populate `.env` from `.env.example`; generate `AUTH_SECRET` with `npx auth secret`.
 
-Run: `npm run dev`, visit `http://localhost:3000/login`, click through Google.
+Run: `npm run dev`, visit `http://localhost:3001/login`, click through Google.
 Expected: redirect to `/` (which 404s until Task 6 — that is correct at this point). Then verify the user landed in the database:
 
 ```bash
