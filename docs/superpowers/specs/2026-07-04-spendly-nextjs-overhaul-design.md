@@ -212,10 +212,12 @@ prefix on `date`, order by `date`.
 **Auth.js v5** (`next-auth@5`) with the Google provider and a JWT session strategy. Scopes
 are `openid`, `email`, `profile` — all non-sensitive.
 
-A `signIn` callback upserts into the existing `users` table using the current
+A `jwt` callback upserts into the existing `users` table using the current
 `(provider, provider_id)` unique constraint; a `session` callback attaches the local
-`users.id` to the session so `entries.user_id` keeps its meaning. The `users` table is
-owned by the app, not by an Auth.js adapter.
+`users.id` to the session so `entries.user_id` keeps its meaning. The upsert lives in `jwt`
+rather than `signIn` because `jwt` receives the OAuth `account` only on initial sign-in,
+so the database is touched once per session rather than once per request. The `users` table
+is owned by the app, not by an Auth.js adapter.
 
 This replaces the hand-rolled `@fastify/oauth2` + server-side session flow, and with it the
 class of bug fixed in `c6904ac` (`saveUninitialized: true so oauth2 state survives the
@@ -326,4 +328,5 @@ negatives.
 | DNS for `spend.samuelwiseman.com` must resolve to the box before certbot runs | Add the A record and confirm propagation before requesting the cert. |
 | Port 13001 already in use | Check `ss -tlnp` on the box before deploying. |
 | Float → integer conversion introduces off-by-a-penny errors | No production data to convert; `money.ts` is unit-tested at the boundary. |
-| Auth.js v5 API churn | Pin the exact version in `package.json`. |
+| Auth.js v5 is still pre-release — npm `latest` is `4.24.14`; v5 is `5.0.0-beta.31` | Pin `5.0.0-beta.31` exactly, no caret. A floating range will break the build without warning. |
+| `db/schema.sql` read from disk at runtime is dropped by Next's file tracing | The schema is a TypeScript string constant (`lib/schema.ts`), not a data file. The failure mode is removed rather than mitigated. |
