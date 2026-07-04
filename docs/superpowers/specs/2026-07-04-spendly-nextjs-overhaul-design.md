@@ -292,14 +292,15 @@ unlike copying the file — with 14 days of retention and `600` permissions.
 
 ### Cutover
 
+**The Railway deployment has already been deleted and the app is currently offline.** This is
+therefore a cold start rather than a migration: there is no fallback to preserve, no cutover
+window, and no data to carry across (Railway held test data only).
+
 1. Build and verify locally against a fresh database.
 2. Create a new Google OAuth client with the production callback URL.
 3. Deploy to `spend.samuelwiseman.com`; verify sign-in, CRUD, month navigation, `/health`.
-4. Publish the Google consent screen.
-5. Delete the Railway project; remove `Procfile`.
-
-Railway stays up until step 3 passes. There is never a moment when the only working copy is
-the one being changed. (The current Railway data is test data only and is not migrated.)
+4. Publish the Google consent screen — until this is done, only test-list accounts can sign in.
+5. Delete the orphaned Railway OAuth client in Google Cloud Console.
 
 ---
 

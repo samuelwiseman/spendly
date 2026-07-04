@@ -431,6 +431,7 @@ Both modules are pure functions with no I/O, so they are tested exhaustively and
   - `addMonths(month: string, delta: number): string`
   - `isValidMonth(value: string): boolean`
   - `formatMonthLong(month: string): string` → `"July 2026"`
+  - `resolveMonth(value: string | undefined): string` — the requested month if valid, else the current month. Both page components use this; do not inline the ternary.
 
 - [ ] **Step 1: Write the failing money tests**
 
@@ -526,7 +527,14 @@ Create `src/lib/months.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { addMonths, formatMonthLong, isValidMonth } from "./months";
+import { addMonths, formatMonthLong, isValidMonth, resolveMonth } from "./months";
+
+describe("resolveMonth", () => {
+  it("keeps a valid month", () => expect(resolveMonth("2026-03")).toBe("2026-03"));
+  it("falls back when undefined", () => expect(resolveMonth(undefined)).toMatch(/^\d{4}-\d{2}$/));
+  it("falls back when invalid", () => expect(resolveMonth("2026-13")).toMatch(/^\d{4}-\d{2}$/));
+  it("falls back when a day is supplied", () => expect(resolveMonth("2026-03-01")).toMatch(/^\d{4}-\d{2}$/));
+});
 
 describe("addMonths", () => {
   it("steps forward", () => expect(addMonths("2026-07", 1)).toBe("2026-08"));
@@ -595,12 +603,17 @@ export function formatMonthLong(month: string): string {
     year: "numeric",
   }).format(date);
 }
+
+/** The month a page should render: the requested one if it parses, else today's. */
+export function resolveMonth(value: string | undefined): string {
+  return value && isValidMonth(value) ? value : currentMonth();
+}
 ```
 
 - [ ] **Step 8: Run to verify pass**
 
 Run: `npm test`
-Expected: PASS, 22 tests across both files.
+Expected: PASS, 26 tests across both files.
 
 - [ ] **Step 9: Commit**
 
@@ -836,7 +849,15 @@ Expected: FAIL — `Failed to resolve import "./entries"`
 import type { DB as Database } from "./db";
 
 export type Category = "need" | "want" | "luxury";
+
+/** Ordered least → most discretionary. The ordinal ramp depends on this order. */
 export const CATEGORIES: readonly Category[] = ["need", "want", "luxury"] as const;
+
+export const CATEGORY_LABELS: Record<Category, string> = {
+  need: "Need",
+  want: "Want",
+  luxury: "Luxury",
+};
 
 export interface Entry {
   id: number;
@@ -1498,10 +1519,8 @@ The bar container carries **no `role="img"`**. `img` is a leaf role: it hides it
 "use client";
 
 import { useState } from "react";
-import { CATEGORIES, type Category } from "@/lib/entries";
+import { CATEGORIES, CATEGORY_LABELS as LABELS, type Category } from "@/lib/entries";
 import { formatGBP, formatGBPCompact } from "@/lib/money";
-
-const LABELS: Record<Category, string> = { need: "Need", want: "Want", luxury: "Luxury" };
 
 export function SpendBar({ totals }: { totals: Record<Category, number> }) {
   const [active, setActive] = useState<Category | null>(null);
@@ -1562,10 +1581,8 @@ export function SpendBar({ totals }: { totals: Record<Category, number> }) {
 - [ ] **Step 3: Create `src/components/SpendTable.tsx`**
 
 ```tsx
-import { CATEGORIES, type Category } from "@/lib/entries";
+import { CATEGORIES, CATEGORY_LABELS as LABELS, type Category } from "@/lib/entries";
 import { formatGBP } from "@/lib/money";
-
-const LABELS: Record<Category, string> = { need: "Need", want: "Want", luxury: "Luxury" };
 
 export function SpendTable({ totals }: { totals: Record<Category, number> }) {
   const total = CATEGORIES.reduce((sum, c) => sum + totals[c], 0);
@@ -1627,7 +1644,7 @@ import { BRAND } from "@/lib/brand";
 import { getDb } from "@/lib/db";
 import { CATEGORIES, categoryTotals } from "@/lib/entries";
 import { formatGBP } from "@/lib/money";
-import { currentMonth, isValidMonth } from "@/lib/months";
+import { resolveMonth } from "@/lib/months";
 import { requireUserId } from "@/lib/session";
 
 export default async function OverviewPage({
@@ -1636,8 +1653,7 @@ export default async function OverviewPage({
   searchParams: Promise<{ month?: string }>;
 }) {
   const userId = await requireUserId();
-  const requested = (await searchParams).month;
-  const month = requested && isValidMonth(requested) ? requested : currentMonth();
+  const month = resolveMonth((await searchParams).month);
 
   const totals = categoryTotals(getDb(), userId, month);
   const total = CATEGORIES.reduce((sum, c) => sum + totals[c], 0);
@@ -1856,7 +1872,7 @@ import { EntryRow } from "@/components/EntryRow";
 import { MonthNav } from "@/components/MonthNav";
 import { getDb } from "@/lib/db";
 import { getEntriesByMonth } from "@/lib/entries";
-import { currentMonth, isValidMonth } from "@/lib/months";
+import { resolveMonth } from "@/lib/months";
 import { requireUserId } from "@/lib/session";
 
 export default async function EntriesPage({
@@ -1865,8 +1881,7 @@ export default async function EntriesPage({
   searchParams: Promise<{ month?: string }>;
 }) {
   const userId = await requireUserId();
-  const requested = (await searchParams).month;
-  const month = requested && isValidMonth(requested) ? requested : currentMonth();
+  const month = resolveMonth((await searchParams).month);
 
   const entries = getEntriesByMonth(getDb(), userId, month);
 
@@ -2373,9 +2388,11 @@ git commit -m "test: playwright coverage for CRUD, isolation, a11y and validatio
 
 ---
 
-## Task 11: Deploy to the Ubuntu server and retire Railway
+## Task 11: Deploy to the Ubuntu server
 
-Server-side runbook. Nothing here is application code. Run every step in order; step 7 is the point of no return.
+Server-side runbook. Nothing here is application code.
+
+**Railway is already gone and the app is currently down.** There is therefore no fallback and no cutover window to protect — this is a cold start, not a migration. Two consequences: nothing here is a "point of no return", and the only data at risk is the local `data.db`, which holds test data. Take the steps in order anyway, because step 7 gates whether anyone other than you can sign in.
 
 **Files:**
 - Create: `docs/deploy.md` (capture the commands actually run, for next time)
@@ -2503,18 +2520,16 @@ Expected: one `0600` file owned by root. These contain other users' financial re
 
 Add `backups/` to `.gitignore`.
 
-- [ ] **Step 9: Retire Railway**
+- [ ] **Step 9: Confirm no Railway artefacts remain**
 
-Only now. Steps 5–7 must have passed.
-
-Confirm no Railway artefacts survived Task 1:
+The Railway project is already deleted. Confirm the repo agrees:
 
 ```bash
 git ls-files | grep -E '^(Procfile|server\.js)$'
 ```
 Expected: no output.
 
-Delete the Railway project in its dashboard, and delete the old Railway OAuth client in Google Cloud Console.
+Delete the old Railway OAuth client in Google Cloud Console — its callback URL now points at nothing, and a dangling client is a credential you are not watching.
 
 - [ ] **Step 10: Update `README.md`**
 
