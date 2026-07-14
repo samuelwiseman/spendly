@@ -131,3 +131,26 @@ a { color: inherit; }
 .data-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
 .data-table th, .data-table td { text-align: left; padding: 7px 0; border-bottom: 1px solid var(--line); }
 .data-table td.num, .data-table th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* ---- entries ---- */
+.entry { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.entry-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.entry-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry-date { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+.entry-amt { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text-strong); }
+
+dialog {
+  background: var(--surface-raised); color: var(--text);
+  border: 1px solid var(--line-strong); border-radius: 10px;
+  padding: 22px; width: min(440px, 92vw);
+}
+dialog::backdrop { background: rgb(0 0 0 / 0.6); }
+dialog label { display: block; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+dialog input, dialog select, dialog textarea {
+  display: block; width: 100%; margin-top: 5px; font: inherit;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--line-strong); border-radius: 5px; padding: 8px 10px;
+}
+dialog input[type="checkbox"] { width: auto; display: inline-block; margin: 0 6px 0 0; }
+.form-error { color: var(--critical); font-size: 13px; margin-bottom: 12px; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
