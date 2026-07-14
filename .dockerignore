@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+data
+*.db
+*.db-shm
+*.db-wal
+.env
+.superpowers
+docs
+tests
+test-results

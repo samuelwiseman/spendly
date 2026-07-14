@@ -1,0 +1,14 @@
+services:
+  web:
+    build: .
+    ports:
+      - "13001:3000"
+    restart: unless-stopped
+    environment:
+      DB_PATH: /data/spendly.db
+      TZ: Europe/London
+    volumes:
+      - ./data:/data
+    env_file:
+      - path: .env
+        required: false
