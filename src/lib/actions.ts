@@ -9,12 +9,14 @@ import { toPence } from "@/lib/money";
 import { consume } from "@/lib/rate-limit";
 import { requireUserId } from "@/lib/session";
 import { signOut } from "@/lib/auth";
-import { countEntries, createEntry, deleteEntry, deleteUser, updateEntry } from "@/lib/entries";
+import {
+  countEntries, createEntry, deleteEntry, deleteUser, getOrCreateCategory, stopRecurring, updateEntry,
+} from "@/lib/entries";
 
 const EntrySchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
   amount: z.string().trim().min(1, "Amount is required"),
-  category: z.enum(["need", "want", "luxury"]),
+  category: z.string().trim().min(1, "Category is required").max(60),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
   notes: z.string().trim().max(1000).nullish(),
   payment_method: z.string().trim().max(60).nullish(),
@@ -46,7 +48,7 @@ function parse(form: FormData) {
 
   return {
     ok: true as const,
-    input: {
+    fields: {
       name: parsed.data.name,
       amount_pence,
       category: parsed.data.category,
@@ -75,7 +77,9 @@ export async function createEntryAction(_prev: ActionResult | null, form: FormDa
     return { ok: false, error: `You have reached the limit of ${ENTRY_CAP} entries.` };
   }
 
-  createEntry(db, userId, parsed.input);
+  const category = getOrCreateCategory(db, userId, parsed.fields.category);
+  const { category: _name, ...rest } = parsed.fields;
+  createEntry(db, userId, { ...rest, category_id: category.id });
   refresh();
   return { ok: true };
 }
@@ -90,7 +94,10 @@ export async function updateEntryAction(_prev: ActionResult | null, form: FormDa
   const parsed = parse(form);
   if (!parsed.ok) return parsed;
 
-  if (!updateEntry(getDb(), userId, id, parsed.input)) {
+  const db = getDb();
+  const category = getOrCreateCategory(db, userId, parsed.fields.category);
+  const { category: _name, ...rest } = parsed.fields;
+  if (!updateEntry(db, userId, id, { ...rest, category_id: category.id })) {
     return { ok: false, error: "Unknown entry" };
   }
 
@@ -115,4 +122,16 @@ export async function deleteAccountAction(form: FormData): Promise<void> {
 
   deleteUser(getDb(), userId);
   await signOut({ redirectTo: "/login" });
+}
+
+export async function stopRecurringAction(form: FormData): Promise<void> {
+  const userId = await requireUserId();
+  if (!consume(userId)) return;
+
+  const id = Number(form.get("id"));
+  const month = String(form.get("month") ?? "");
+  if (Number.isInteger(id) && /^\d{4}-\d{2}$/.test(month)) {
+    stopRecurring(getDb(), userId, id, month);
+  }
+  refresh();
 }
