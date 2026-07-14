@@ -16,3 +16,4 @@ npm-debug.log*
 .e2e.db*
 test-results/
 playwright-report/
+*.tsbuildinfo
