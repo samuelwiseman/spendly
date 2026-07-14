@@ -22,7 +22,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     session({ session, token }) {
-      if (token.userId) session.userId = token.userId;
+      // The `session` callback param is typed as the intersection of the JWT and
+      // database strategies, so `session.userId` collides with AdapterSession's
+      // `userId: string` and resolves to `never`. We only use the JWT strategy;
+      // `auth()`'s return type carries `userId: number` correctly.
+      if (token.userId) (session as { userId: number }).userId = token.userId;
       return session;
     },
   },

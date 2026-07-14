@@ -1,13 +1,13 @@
-import "next-auth";
-import "next-auth/jwt";
+import "@auth/core/types";
+import "@auth/core/jwt";
 
-declare module "next-auth" {
+declare module "@auth/core/types" {
   interface Session {
     userId: number;
   }
 }
 
-declare module "next-auth/jwt" {
+declare module "@auth/core/jwt" {
   interface JWT {
     userId?: number;
   }
