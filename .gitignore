@@ -12,3 +12,7 @@ npm-debug.log*
 .superpowers/
 
 .next/
+
+.e2e.db*
+test-results/
+playwright-report/
