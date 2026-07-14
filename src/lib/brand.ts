@@ -1,6 +1,6 @@
 export const BRAND = {
   name: "Spendly",
-  domain: "spend.samuelwiseman.com",
-  url: "https://spend.samuelwiseman.com",
-  tagline: "Needs, wants, luxuries.",
+  domain: "spendly.samuelwiseman.com",
+  url: "https://spendly.samuelwiseman.com",
+  tagline: "Track where your money goes.",
 } as const;
