@@ -39,8 +39,9 @@ export default async function OverviewPage({
         <SpendTable totals={totals} />
       </section>
 
-      <p style={{ marginTop: 40 }}>
+      <p style={{ marginTop: 40, display: "flex", gap: 12 }}>
         <Link href={`/entries?month=${month}`} className="btn">View entries</Link>
+        <Link href="/account" className="btn">Account</Link>
       </p>
     </main>
   );

@@ -8,7 +8,8 @@ import { ENTRY_CAP, exceedsCap } from "@/lib/limits";
 import { toPence } from "@/lib/money";
 import { consume } from "@/lib/rate-limit";
 import { requireUserId } from "@/lib/session";
-import { countEntries, createEntry, deleteEntry, updateEntry } from "@/lib/entries";
+import { signOut } from "@/lib/auth";
+import { countEntries, createEntry, deleteEntry, deleteUser, updateEntry } from "@/lib/entries";
 
 const EntrySchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
@@ -105,4 +106,13 @@ export async function deleteEntryAction(form: FormData): Promise<void> {
   if (Number.isInteger(id)) deleteEntry(getDb(), userId, id);
 
   refresh();
+}
+
+export async function deleteAccountAction(form: FormData): Promise<void> {
+  const userId = await requireUserId();
+
+  if (form.get("confirm") !== "DELETE") return;
+
+  deleteUser(getDb(), userId);
+  await signOut({ redirectTo: "/login" });
 }
