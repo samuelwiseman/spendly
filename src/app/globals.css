@@ -10,10 +10,6 @@
   --critical: #d03b3b;
   --good: #0ca30c;
 
-  --cat-need: #98362c;
-  --cat-want: #c9564a;
-  --cat-luxury: #e8a093;
-
   --sans: var(--font-sans), -apple-system, system-ui, sans-serif;
   --mono: var(--font-mono), ui-monospace, Menlo, monospace;
 }
@@ -98,9 +94,6 @@ a { color: inherit; }
 .bar-seg { border: 0; padding: 0; cursor: default; position: relative; }
 .bar-seg:first-child { border-radius: 4px 0 0 4px; }
 .bar-seg:last-child { border-radius: 0 4px 4px 0; }
-.bar-seg[data-cat="need"] { background: var(--cat-need); }
-.bar-seg[data-cat="want"] { background: var(--cat-want); }
-.bar-seg[data-cat="luxury"] { background: var(--cat-luxury); }
 
 .bar-empty {
   height: 40px; border: 1px dashed var(--line-strong); border-radius: 4px;

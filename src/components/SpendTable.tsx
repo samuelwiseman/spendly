@@ -1,8 +1,8 @@
-import { CATEGORIES, CATEGORY_LABELS as LABELS, type Category } from "@/lib/entries";
+import type { CategoryTotal } from "@/lib/entries";
 import { formatGBP } from "@/lib/money";
 
-export function SpendTable({ totals }: { totals: Record<Category, number> }) {
-  const total = CATEGORIES.reduce((sum, c) => sum + totals[c], 0);
+export function SpendTable({ totals }: { totals: CategoryTotal[] }) {
+  const total = totals.reduce((sum, t) => sum + t.total, 0);
 
   return (
     <details className="table-toggle">
@@ -17,13 +17,18 @@ export function SpendTable({ totals }: { totals: Record<Category, number> }) {
           </tr>
         </thead>
         <tbody>
-          {CATEGORIES.map((c) => (
-            <tr key={c}>
-              <th scope="row">{LABELS[c]}</th>
-              <td className="num">{formatGBP(totals[c])}</td>
-              <td className="num">{total === 0 ? "—" : `${Math.round((totals[c] / total) * 100)}%`}</td>
+          {totals.map((t) => (
+            <tr key={t.id}>
+              <th scope="row">{t.name}</th>
+              <td className="num">{formatGBP(t.total)}</td>
+              <td className="num">{total === 0 ? "—" : `${Math.round((t.total / total) * 100)}%`}</td>
             </tr>
           ))}
+          {totals.length === 0 && (
+            <tr>
+              <td colSpan={3} style={{ color: "var(--faint)" }}>No spending recorded</td>
+            </tr>
+          )}
         </tbody>
       </table>
     </details>

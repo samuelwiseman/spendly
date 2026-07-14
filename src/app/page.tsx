@@ -4,7 +4,7 @@ import { SpendBar } from "@/components/SpendBar";
 import { SpendTable } from "@/components/SpendTable";
 import { BRAND } from "@/lib/brand";
 import { getDb } from "@/lib/db";
-import { CATEGORIES, categoryTotals } from "@/lib/entries";
+import { categoryTotals } from "@/lib/entries";
 import { formatGBP } from "@/lib/money";
 import { resolveMonth } from "@/lib/months";
 import { requireUserId } from "@/lib/session";
@@ -18,8 +18,7 @@ export default async function OverviewPage({
   const month = resolveMonth((await searchParams).month);
 
   const totals = categoryTotals(getDb(), userId, month);
-  const total = CATEGORIES.reduce((sum, c) => sum + totals[c], 0);
-  const discretionary = totals.want + totals.luxury;
+  const total = totals.reduce((sum, t) => sum + t.total, 0);
 
   return (
     <main className="col" style={{ paddingTop: 32, paddingBottom: 64 }}>
@@ -30,9 +29,6 @@ export default async function OverviewPage({
 
       <p className="label">Total out</p>
       <p className="hero">{formatGBP(total)}</p>
-      <p className="mono" style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
-        {total === 0 ? "—" : `${Math.round((discretionary / total) * 100)}% discretionary`}
-      </p>
 
       <section style={{ marginTop: 32 }}>
         <SpendBar totals={totals} />

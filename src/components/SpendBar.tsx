@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { CATEGORIES, CATEGORY_LABELS as LABELS, type Category } from "@/lib/entries";
+import type { CategoryTotal } from "@/lib/entries";
 import { formatGBP, formatGBPCompact } from "@/lib/money";
 
-export function SpendBar({ totals }: { totals: Record<Category, number> }) {
-  const [active, setActive] = useState<Category | null>(null);
+export function SpendBar({ totals }: { totals: CategoryTotal[] }) {
+  const [active, setActive] = useState<number | null>(null);
 
-  const total = CATEGORIES.reduce((sum, c) => sum + totals[c], 0);
+  const total = totals.reduce((sum, t) => sum + t.total, 0);
   if (total === 0) {
     return <div className="bar-empty">No spending recorded this month</div>;
   }
@@ -17,22 +17,21 @@ export function SpendBar({ totals }: { totals: Record<Category, number> }) {
   return (
     <>
       <div className="bar">
-        {CATEGORIES.filter((c) => totals[c] > 0).map((c) => (
+        {totals.map((t) => (
           <button
-            key={c}
+            key={t.id}
             type="button"
             className="bar-seg"
-            data-cat={c}
-            style={{ flexGrow: totals[c] }}
-            onMouseEnter={() => setActive(c)}
+            style={{ flexGrow: t.total, background: t.color }}
+            onMouseEnter={() => setActive(t.id)}
             onMouseLeave={() => setActive(null)}
-            onFocus={() => setActive(c)}
+            onFocus={() => setActive(t.id)}
             onBlur={() => setActive(null)}
-            aria-label={`${LABELS[c]}: ${formatGBP(totals[c])}, ${pct(totals[c])}%`}
+            aria-label={`${t.name}: ${formatGBP(t.total)}, ${pct(t.total)}%`}
           >
-            {active === c && (
+            {active === t.id && (
               <span className="tip mono">
-                {LABELS[c]} · {formatGBP(totals[c])} · {pct(totals[c])}%
+                {t.name} · {formatGBP(t.total)} · {pct(t.total)}%
               </span>
             )}
           </button>
@@ -46,12 +45,12 @@ export function SpendBar({ totals }: { totals: Record<Category, number> }) {
       </div>
 
       <div className="legend">
-        {CATEGORIES.map((c) => (
-          <div className="legend-row" key={c}>
-            <span className="legend-sw" style={{ background: `var(--cat-${c})` }} />
-            <span className="legend-name">{LABELS[c]}</span>
-            <span className="fig">{formatGBP(totals[c])}</span>
-            <span className="legend-pct mono">{pct(totals[c])}%</span>
+        {totals.map((t) => (
+          <div className="legend-row" key={t.id}>
+            <span className="legend-sw" style={{ background: t.color }} />
+            <span className="legend-name">{t.name}</span>
+            <span className="fig">{formatGBP(t.total)}</span>
+            <span className="legend-pct mono">{pct(t.total)}%</span>
           </div>
         ))}
       </div>
