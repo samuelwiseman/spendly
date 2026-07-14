@@ -8,3 +8,15 @@ npm-debug.log*
 *.log
 .env.local
 .env.*.local
+
+.superpowers/
+
+.next/
+
+.e2e.db*
+test-results/
+playwright-report/
+*.tsbuildinfo
+
+data/
+backups/
