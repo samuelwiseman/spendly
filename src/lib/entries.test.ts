@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createDb, type DB } from "./db";
 import {
-  categoryTotals, countEntries, createEntry, deleteEntry, deleteUser, exportUser,
+  categoryTotals, countEntries, createEntry, deleteEntry, deleteUser, entryOwnedBy, exportUser,
   getEntriesByMonth, getOrCreateCategory, listCategories, nameSuggestions,
   stopRecurring, updateEntry, upsertUser,
 } from "./entries";
@@ -159,6 +159,15 @@ describe("deleteEntry / deleteUser", () => {
     expect(countEntries(db, bob)).toBe(1);
     expect(listCategories(db, alice)).toHaveLength(0);
     expect((db.prepare("SELECT COUNT(*) AS n FROM entries").get() as { n: number }).n).toBe(1);
+  });
+});
+
+describe("entryOwnedBy", () => {
+  it("is true only for the owner of an existing entry", () => {
+    const e = add(alice, "Rent", 95000, "Housing", "2026-07-01");
+    expect(entryOwnedBy(db, alice, e.id)).toBe(true);
+    expect(entryOwnedBy(db, bob, e.id)).toBe(false);
+    expect(entryOwnedBy(db, alice, 999999)).toBe(false);
   });
 });
 

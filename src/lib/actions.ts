@@ -10,7 +10,8 @@ import { consume } from "@/lib/rate-limit";
 import { requireUserId } from "@/lib/session";
 import { signOut } from "@/lib/auth";
 import {
-  countEntries, createEntry, deleteEntry, deleteUser, getOrCreateCategory, stopRecurring, updateEntry,
+  countEntries, createEntry, deleteEntry, deleteUser, entryOwnedBy,
+  getOrCreateCategory, stopRecurring, updateEntry,
 } from "@/lib/entries";
 
 const EntrySchema = z.object({
@@ -95,6 +96,10 @@ export async function updateEntryAction(_prev: ActionResult | null, form: FormDa
   if (!parsed.ok) return parsed;
 
   const db = getDb();
+  // Confirm ownership before resolving the category, so a bogus/foreign id
+  // doesn't leave an orphan category in the caller's list.
+  if (!entryOwnedBy(db, userId, id)) return { ok: false, error: "Unknown entry" };
+
   const category = getOrCreateCategory(db, userId, parsed.fields.category);
   const { category: _name, ...rest } = parsed.fields;
   if (!updateEntry(db, userId, id, { ...rest, category_id: category.id })) {

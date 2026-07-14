@@ -184,6 +184,12 @@ export function deleteEntry(db: Database, userId: number, id: number): boolean {
   return db.prepare("DELETE FROM entries WHERE id = ? AND user_id = ?").run(id, userId).changes > 0;
 }
 
+/** Whether the user owns an entry with this id. Lets a caller confirm ownership
+ *  before doing work (e.g. creating a category) that a failed write would waste. */
+export function entryOwnedBy(db: Database, userId: number, id: number): boolean {
+  return db.prepare("SELECT 1 FROM entries WHERE id = ? AND user_id = ?").get(id, userId) !== undefined;
+}
+
 export function exportUser(db: Database, userId: number): { user: unknown; entries: unknown[] } {
   return {
     user: db.prepare("SELECT id, provider, name, email, created_at FROM users WHERE id = ?").get(userId),
