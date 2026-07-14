@@ -1,24 +1,46 @@
-import { deleteEntryAction } from "@/lib/actions";
+import { deleteEntryAction, stopRecurringAction } from "@/lib/actions";
 import { EntryDialog } from "@/components/EntryDialog";
-import type { Entry } from "@/lib/entries";
+import type { Category, EntryWithCategory, Suggestion } from "@/lib/entries";
 import { formatGBP } from "@/lib/money";
 
-export function EntryRow({ entry, month }: { entry: Entry; month: string }) {
+export function EntryRow({
+  entry,
+  month,
+  categories,
+  suggestions,
+}: {
+  entry: EntryWithCategory;
+  month: string;
+  categories: Category[];
+  suggestions: Suggestion[];
+}) {
   const day = new Date(`${entry.date}T00:00:00Z`).toLocaleDateString("en-GB", {
     timeZone: "UTC", day: "2-digit", month: "short",
   });
 
   return (
     <li className="entry">
-      <span className="entry-dot" style={{ background: `var(--cat-${entry.category})` }} />
+      <span className="entry-dot" style={{ background: entry.category_color }} />
       <span className="entry-name">
         {entry.name}
-        {entry.recurring === 1 && <span className="label" style={{ marginLeft: 8 }}>recurring</span>}
+        <span className="label" style={{ marginLeft: 8 }}>{entry.category_name}</span>
       </span>
-      <span className="entry-date">{day}</span>
+
+      {entry.recurring === 1
+        ? <span className="entry-tag">monthly</span>
+        : <span className="entry-date">{day}</span>}
+
       <span className="entry-amt">{formatGBP(entry.amount_pence)}</span>
 
-      <EntryDialog entry={entry} month={month} />
+      {entry.recurring === 1 && entry.end_month === null && (
+        <form action={stopRecurringAction}>
+          <input type="hidden" name="id" value={entry.id} />
+          <input type="hidden" name="month" value={month} />
+          <button type="submit" className="btn" aria-label={`End recurrence for ${entry.name}`}>End</button>
+        </form>
+      )}
+
+      <EntryDialog entry={entry} month={month} categories={categories} suggestions={suggestions} />
 
       <form action={deleteEntryAction}>
         <input type="hidden" name="id" value={entry.id} />

@@ -1,18 +1,39 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useId, useRef } from "react";
 import type { ActionResult } from "@/lib/action-types";
-import type { Entry } from "@/lib/entries";
+import type { Category, EntryWithCategory, Suggestion } from "@/lib/entries";
 import { createEntryAction, updateEntryAction } from "@/lib/actions";
 
-export function EntryDialog({ entry, month }: { entry: Entry | null; month: string }) {
+export function EntryDialog({
+  entry,
+  month,
+  categories,
+  suggestions,
+}: {
+  entry: EntryWithCategory | null;
+  month: string;
+  categories: Category[];
+  suggestions: Suggestion[];
+}) {
   const ref = useRef<HTMLDialogElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const uid = useId();
   const action = entry ? updateEntryAction : createEntryAction;
   const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(action, null);
 
   useEffect(() => {
     if (state?.ok) ref.current?.close();
   }, [state]);
+
+  function prefillFromName(value: string) {
+    const match = suggestions.find((s) => s.name === value);
+    const form = formRef.current;
+    if (!match || !form) return;
+    (form.elements.namedItem("amount") as HTMLInputElement).value = (match.amount_pence / 100).toFixed(2);
+    (form.elements.namedItem("category") as HTMLInputElement).value = match.category_name;
+    (form.elements.namedItem("payment_method") as HTMLInputElement).value = match.payment_method ?? "";
+  }
 
   return (
     <>
@@ -21,14 +42,19 @@ export function EntryDialog({ entry, month }: { entry: Entry | null; month: stri
       </button>
 
       <dialog ref={ref}>
-        <form action={formAction}>
+        <form action={formAction} ref={formRef}>
           {entry && <input type="hidden" name="id" value={entry.id} />}
 
           {state && !state.ok && <p className="form-error" role="alert">{state.error}</p>}
+          {entry?.recurring === 1 && <p className="dialog-note">Changes apply to every month.</p>}
 
           <label>Name
-            <input name="name" defaultValue={entry?.name ?? ""} required maxLength={120} />
+            <input name="name" list={`names-${uid}`} defaultValue={entry?.name ?? ""} required maxLength={120}
+              onInput={(e) => prefillFromName(e.currentTarget.value)} />
           </label>
+          <datalist id={`names-${uid}`}>
+            {suggestions.map((s) => <option key={s.name} value={s.name} />)}
+          </datalist>
 
           <label>Amount (£)
             <input name="amount" inputMode="decimal" required
@@ -36,12 +62,12 @@ export function EntryDialog({ entry, month }: { entry: Entry | null; month: stri
           </label>
 
           <label>Category
-            <select name="category" defaultValue={entry?.category ?? "need"}>
-              <option value="need">Need</option>
-              <option value="want">Want</option>
-              <option value="luxury">Luxury</option>
-            </select>
+            <input name="category" list={`cats-${uid}`} required maxLength={60}
+              defaultValue={entry?.category_name ?? ""} placeholder="e.g. Groceries" />
           </label>
+          <datalist id={`cats-${uid}`}>
+            {categories.map((c) => <option key={c.id} value={c.name} />)}
+          </datalist>
 
           <label>Date
             <input type="date" name="date" required defaultValue={entry?.date ?? `${month}-01`} />
@@ -57,7 +83,7 @@ export function EntryDialog({ entry, month }: { entry: Entry | null; month: stri
 
           <label>
             <input type="checkbox" name="recurring" defaultChecked={entry?.recurring === 1} />
-            Recurring
+            Recurs monthly
           </label>
 
           <div className="dialog-actions">

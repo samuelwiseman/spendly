@@ -147,3 +147,10 @@ dialog input, dialog select, dialog textarea {
 dialog input[type="checkbox"] { width: auto; display: inline-block; margin: 0 6px 0 0; }
 .form-error { color: var(--critical); font-size: 13px; margin-bottom: 12px; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+
+.entry-tag {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--muted);
+  border: 1px solid var(--line-strong); border-radius: 4px; padding: 1px 5px;
+}
+.dialog-note { color: var(--faint); font-size: 12px; margin-bottom: 12px; }
